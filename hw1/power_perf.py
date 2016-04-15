@@ -110,10 +110,11 @@ for idx in range(len(x)):
 
 # Plot our graph
 plt.scatter(x, y)
-plt.plot(pareto_optimal_freq, paraeto_optimal_power, "*-")
+plt.plot(pareto_optimal_freq, paraeto_optimal_power, "*-", label="Optimal")
 plt.title("Power vs. Frequency")
 plt.ylabel("Power (Watts)")
 plt.xlabel("Frequency (GHz)")
+plt.legend(loc="upper left")
 plt.savefig('power_perf.png')
 
 # Figure out the minimal energy
@@ -142,4 +143,6 @@ for f in freq:
 
 for t in sorted(min_joules, key=lambda x: x[2]):
 
-    print "%d cores at %1.1f GHz uses %f J"% (t[1],t[0],t[2])
+    # print "%d cores at %1.1f GHz uses %f J"% (t[1],t[0],t[2])
+
+    print "%d & %1.1f & %f \\\\\hline"% (t[1],t[0],t[2])
