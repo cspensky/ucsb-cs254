@@ -76,57 +76,63 @@ freq_vdd = [(2, .9, 1),
 
 x = []
 y = []
-freq = {}
+time_dict = {}
 for data in freq_vdd:
-    y.append(data[2])
-    x.append(data[0])
+    time = 1.0/data[0]
+    energy = data[2] + .3 * data[1] * time
+    y.append(energy)
+    x.append(time)
 
-    if data[0] not in freq:
-        freq[data[0]] = []
+    if time not in time_dict:
+        time_dict[time] = []
 
-    freq[data[0]].append(data[2])
+    time_dict[time].append(energy)
 
 # Get our optimal power plot
-min_power = []
+min_energy = []
 for f in x:
-    min_w = min(freq[f])
-    min_power.append(min_w)
+    print time_dict[f]
+    min_p = min(time_dict[f])
+    print min_p
+    min_energy.append(min_p)
 
+print min_energy
 # Get our optimal points
-pareto_optimal_freq = []
-paraeto_optimal_power = []
+pareto_optimal_time = []
+paraeto_optimal_energy = []
 for idx in range(len(x)):
     f = x[idx]
-    power = min_power[idx]
+    power = min_energy[idx]
 
     # If its the same power and higher freq., it's strictly better
     try:
-        power_idx = paraeto_optimal_power.index(power)
-        if freq > pareto_optimal_freq[power_idx]:
-            pareto_optimal_freq[power_idx] = f
+        power_idx = paraeto_optimal_energy.index(power)
+        if time_dict < pareto_optimal_freq[power_idx]:
+            pareto_optimal_time[power_idx] = f
     except:
-        pareto_optimal_freq.append(f)
-        paraeto_optimal_power.append(power)
+        pareto_optimal_time.append(f)
+        paraeto_optimal_energy.append(power)
 
 # Plot our graph
 plt.scatter(x, y)
-plt.plot(pareto_optimal_freq, paraeto_optimal_power, "*-", label="Optimal")
-plt.title("Power vs. Frequency")
-plt.ylabel("Power (Watts)")
-plt.xlabel("Frequency (GHz)")
-plt.legend(loc="upper left")
+plt.plot(pareto_optimal_time, paraeto_optimal_energy, "*-", label="Optimal")
+plt.title("Energy vs. Time")
+plt.ylabel("Energy (Joules)")
+plt.xlabel("Time (Seconds)")
+plt.legend(loc="upper right")
 plt.savefig('power_perf.png')
 
 # Figure out the minimal energy
 instructions = 1000000000
 min_joules = []
-for f in freq:
+for f in time_dict:
     ins_sec = f * 1000000000.0
-    min_w = min(freq[f])
-    watts = min_w
+    min_p = min(time_dict[f])
+    energy = min_p
 
     time_per_core = instructions / ins_sec
 
+    time_per_core = f
     # print "Time per core @ %1.1fGhz: %f" % (f, time_per_core)
 
     # How many cores?
@@ -135,11 +141,11 @@ for f in freq:
         cores += 1
 
     # How much energy? (*cores/cores cancel out)
-    joules = watts * time_per_core
+    joules = energy * time_per_core
 
     # print "Use %d cores and %f Jouels" % (cores, joules)
 
-    min_joules.append((f, cores, joules))
+    min_joules.append((1/f, cores, joules))
 
 for t in sorted(min_joules, key=lambda x: x[2]):
 
