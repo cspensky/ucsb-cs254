@@ -34,6 +34,8 @@
 \usepackage{forest}
 \usepackage{float}
 \usepackage{listings}
+\usepackage{hyperref}
+
 
 %----------------------------------------------------------------------------------------
 %	NAME AND CLASS SECTION
@@ -88,13 +90,17 @@ In this case, we first want to prime the predictor to the \emph{not branch case}
 
 See the output below:\\
 \begin{tabular}{| l | l | l | l |}
-\hline  \bf{i} & \bf{Predictor Value} & \bf{Branch Prediction} & \bf{Branch Condition} \\\hline  1 & 0b?? & ? & False \\\hline
-  2 & 0b?? & ? & False \\\hline  3 & 0b?? & Not taken & False \\\hline
+\hline
+  \bf{i} & \bf{Predictor Value} & \bf{Branch Prediction} & \bf{Branch Condition} \\\hline
+  1 & 0b?? & ? & False \\\hline
+  2 & 0b?? & ? & False \\\hline
+  3 & 0b?? & Not taken & False \\\hline
   4 & 0b00 & Not taken & True \\\hline
   5 & 0b01 & Not taken & True \\\hline
   6 & 0b10 & Taken & False \\\hline
   7 & 0b01 & Not taken & True \\\hline
-  \dots & \dots & \dots & \dots \\\hline\end{tabular}
+  \dots & \dots & \dots & \dots \\\hline
+\end{tabular}
   
 \subsection{Modified Bimodal Predictor (Hennessey and Patterson)}
 In this case, we first want to prime the predictor to the \emph{not branch case}, and which point we want do 3 instances where we don't take the branch to load up the predictor, then 3 instances where we do take the branch, and continuously repeat this.
@@ -102,8 +108,11 @@ In this case, we first want to prime the predictor to the \emph{not branch case}
 
 See the output below:\\
 \begin{tabular}{| l | l | l | l |}
-\hline  \bf{i} & \bf{Predictor Value} & \bf{Branch Prediction} & \bf{Branch Condition} \\\hline  1 & 0b?? & ? & False \\\hline
-  2 & 0b?? & ? & False \\\hline  3 & 0b?? & Not taken & False \\\hline
+\hline
+  \bf{i} & \bf{Predictor Value} & \bf{Branch Prediction} & \bf{Branch Condition} \\\hline
+  1 & 0b?? & ? & False \\\hline
+  2 & 0b?? & ? & False \\\hline
+  3 & 0b?? & Not taken & False \\\hline
   4 & 0b00 & Not taken & True \\\hline
   5 & 0b00 & Not taken & True \\\hline
   6 & 0b00 & Not taken (S-Not, S-Not, S-Not) & True \\\hline
@@ -113,7 +122,8 @@ See the output below:\\
   10 & 0b10 & Taken (W-Taken, S-Taken, W-Taken) & False \\\hline
   11 & 0b01 & Taken (S-Taken, W-Taken, W-Not) & False \\\hline
   12 & 0b00 & Not taken (W-Taken, W-Not, S-Not) & True \\\hline
-  \dots & \dots & \dots & \dots \\\hline\end{tabular}
+  \dots & \dots & \dots & \dots \\\hline
+\end{tabular}
   
 \newpage
  
@@ -154,17 +164,52 @@ In this case, we would expect the same outcome as before, where could achieve 1 
 All of these predictors were implemented in python, the results are below:
 {\footnotesize
 \begin{tabular}{| r | c | c | c |}
-\hline   & \bf{Global Predictor} & \bf{Local Predictor} & \bf{Tournament Predictor} \\\hline
+\hline
+   & \bf{Global Predictor} & \bf{Local Predictor} & \bf{Tournament Predictor} \\\hline
 Correct Predictions 	& 3414883 (89.584659\%)		& 2519412 (66.093235\%)		& 3532738 (92.676420\%) \\\hline
 Missed Predictions 	& 397023 (10.415341\%)		& 1292494 (33.906765\%)		& 279168 (7.323580\%) \\\hline
 Most-missed PC 	& 0x40141c69 (23918 times)	& 0xa0edf91b (152601 times)	& 0x40141c69 (24755 times)\\
-\hline\end{tabular}
+\hline
+\end{tabular}
 }
 
 \newpage
 
 \section{Pipelines and Branch Prediction (6pts)}
+In this problem, we need to incorporate R into our execution time speedup equation:
+\begin{equation*}
+ET = \frac{time}{cycle} + \frac{cycle}{instructions} + \frac{instructions}{program}
+\end{equation*}
+which as a speedup is:
+\begin{equation*}
+ET_{speedup} = \frac{\frac{S_0}{C_0}}{\frac{S_n}{C_n}} * \frac{\frac{C_0}{I_0}}{\frac{C_n}{I_n}} * \frac{\frac{I_0}{I_0}}{\frac{I_n}{P_n}}
+\end{equation*}
 
+Since we aren't changing the cycles, instructions, or program, the right 2 portions of the equation remain the same (in fact, instructions per program is unchanged):
+\begin{equation*}
+ET_{speedup} = \frac{\frac{S_0}{C_0}}{\frac{S_n}{C_n}} * \frac{1}{1+\frac{P}{B}}*1
+\end{equation*}
+$S_0$ is $W$ and $C_0$ remains unchanged.  $C_n = C_0*P$ since we are now increasing the total number of cycles per second.  Similarly, the time taken now is $S_n = W+RP$.  Thus, our new equation is:
+\begin{eqnarray*}
+ET_{speedup} & = \frac{\frac{W}{C_0}}{\frac{W+R*P}{C_0*P}} * \frac{1}{1+\frac{P}{B}}\\
+& = \frac{WP}{W+R*P} * \frac{1}{1+\frac{P}{B}}
+\end{eqnarray*}
+So for $W=1ns, R=100ps, B = 100$, we get:
+\begin{eqnarray*}
+ET_{speedup} & = \frac{P}{1+\frac{P}{100}} * \frac{1}{1+\frac{P}{100}}\\
+& = \frac{1+P}{(1+\frac{P}{100})^2}
+\end{eqnarray*}
+which has the derivative of:
+\begin{equation*}
+-\frac{10,000(P-100)} {(P+100)^3}
+\end{equation*}
+Implying that our maximum value will be achieved at $\mathbf{P = 100}$.
+\newpage
+To solve this generally, one could calculate the derivative of the base equation.  However, it has been a while since I've done this level of calculus, and my memory is a little shady on it.  Neverthless, Wolfram Alpha does offer some insights: \url{https://www.wolframalpha.com/input/?i=derivative+WP\%2F(W\%2BRP)\%2B1\%2F(1\%2BP\%2FB)}
+Finding the roots of this equation would provide potential maxima:\\
+\begin{figure}
+\centering
+\includegraphics[width=.8\textwidth]{derivative.png}
 %\end{homeworkProblem}
-
+\end{figure}
 \end{document}
